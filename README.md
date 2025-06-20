@@ -1,7 +1,7 @@
 
 # MUSINSA Backend Assignment API
 
-무신사 백엔드 엔지니어 과제용 **카테고리‑별/브랜드‑별 가격 조회 서비스** 구현체입니다.
+무신사 백엔드 엔지니어 과제용 **카테고리‑별 / 브랜드‑별 가격 조회 서비스** 구현체입니다.
 
 ---
 
@@ -17,6 +17,8 @@ com.musinsa
  └─ common       – 공통 예외·응답·헬퍼
 ```
 
+---
+
 ## 🚀 빌드 & 실행
 
 ```bash
@@ -31,20 +33,44 @@ cd musinsa-backend-assignment
 ./gradlew bootRun
 ```
 
-> H2 콘솔: `http://localhost:8080/h2-console`
+> H2 콘솔: `http://localhost:8080/h2-console`  
 > JDBC URL: `jdbc:h2:mem:testdb`
 
-초기 데이터는 `data.sql`(없으면 직접 Brand API 호출)로 주입 됩니다.
+초기 데이터는 `data.sql`(없으면 직접 Brand API 호출)로 주입됩니다.
 
 ---
 
 ## 🔗 API 명세
 
-> 모든 응답은 `200 OK` / 실패 시 `ErrorResponse {status, message}`
-> 
-> 공통 Prefix : `/api/v1`
+공통 Prefix : `/api/v1`
 
-### 구현1) 카테고리 별 최저가격 브랜드와 상품 가격, 총액을 조회하는 API
+### 🔔 Error Handling
+
+모든 **실패** 응답은 아래 `ErrorResponse` 포맷을 따릅니다.
+
+```json
+{
+  "status": 404,
+  "code": "BRAND_NOT_FOUND",
+  "message": "브랜드를 찾을 수 없습니다."
+}
+```
+
+| Enum                       | HTTP | 기본 메시지                           |
+|---------------------------|------|---------------------------------------|
+| `BRAND_NOT_FOUND`         | 404  | 브랜드를 찾을 수 없습니다.            |
+| `BRAND_ALREADY_EXISTS`    | 409  | 이미 존재하는 브랜드입니다.           |
+| `PRODUCT_NOT_FOUND`       | 404  | 상품을 찾을 수 없습니다.              |
+| `VALIDATION_ERROR`        | 400  | 요청 값이 유효하지 않습니다.          |
+| `INTERNAL_ERROR`          | 500  | 서버 오류가 발생했습니다.             |
+
+> `ErrorCode` enum 에 **HTTP 상태, 에러 코드, 기본 메시지**를 한꺼번에 정의하고,  
+> 서비스 레이어에서 `throw new ApiException(ErrorCode.BRAND_NOT_FOUND);` 처럼 사용합니다.  
+> `GlobalExceptionHandler` 가 이를 받아 위 형식으로 직렬화합니다.
+
+---
+
+### 구현1) 카테고리 별 최저가격 브랜드와 상품 가격, 총액을 조회
 
 ```
 GET /categories/cheapest-brands
@@ -54,8 +80,7 @@ GET /categories/cheapest-brands
 {
   "items":[
     {"category":"상의","brand":"C","price":10000},
-    {"category":"아우터","brand":"E","price":5000},
-    ...
+    {"category":"아우터","brand":"E","price":5000}
   ],
   "total":34100
 }
@@ -69,13 +94,12 @@ GET /brands/cheapest
 
 ```json
 {
-    "brand": "D",
-    "categories": [
-        {"category": "바지", "price": 3000},
-        {"category": "모자", "price": 1500},
-        ...
-    ],
-    "total": 36100
+  "brand": "D",
+  "categories": [
+    {"category": "바지", "price": 3000},
+    {"category": "모자", "price": 1500}
+  ],
+  "total": 36100
 }
 ```
 ### 구현3) 카테고리 이름으로 최저, 최고 가격 브랜드와 상품 가격을 조회하는 API
@@ -83,22 +107,23 @@ GET /brands/cheapest
 ```
 GET /categories/{category}/price-stats
 ```
-| Path variable | 설명           |
-|---------------|----------------|
+
+| Path variable | 설명      |
+|---------------|-----------|
 | `category`    | 카테고리명 |
 
-#### 응답예시 – `category = 상의`
+#### 응답 예시 – `category = 상의`
 
 
 ```json
 {
-    "category": "상의",
-    "lowest": [
-        {"brand": "C", "price": 10000}
-    ],
-    "highest": [
-        {"brand": "I", "price": 11400}
-    ]
+  "category": "상의",
+  "lowest": [
+    {"brand": "C", "price": 10000}
+  ],
+  "highest": [
+    {"brand": "I", "price": 11400}
+  ]
 }
 ```
 
@@ -106,19 +131,21 @@ GET /categories/{category}/price-stats
 
 ### 구현4) 브랜드 및 상품을 추가 / 업데이트 / 삭제하는 API
 
-| Method | Path | 설명 |
-|--------|------|------|
-| `POST` | `/brands` | 브랜드 등록 |
-| `PUT` | `/brands/{name}` | 브랜드 수정 |
-| `DELETE` | `/brands/{name}` | 브랜드 삭제 |
-| `POST` | `/products` | 개별 상품 등록 |
-| `PUT` | `/products/{id}` | 상품 수정 |
-| `DELETE` | `/products/{id}` | 상품 삭제 |
+| Method | Path               | 설명             |
+|--------|--------------------|------------------|
+| POST   | `/brands`          | 브랜드 등록      |
+| PUT    | `/brands/{name}`   | 브랜드 수정      |
+| DELETE | `/brands/{name}`   | 브랜드 삭제      |
+| POST   | `/products`        | 개별 상품 등록   |
+| PUT    | `/products/{id}`   | 상품 수정        |
+| DELETE | `/products/{id}`   | 상품 삭제        |
 
-#### 요청 예시 – 브랜드 등록
+**요청 예시 – 브랜드 등록**
 
-```json
-POST /brands
+```http
+POST /api/v1/brands
+Content-Type: application/json
+
 {
   "brand": "Z",
   "prices": {
@@ -138,9 +165,10 @@ POST /brands
 
 ## 🧪 테스트
 
-* **단위 테스트** : 서비스 로직‑단위
-* **통합 테스트** : `@SpringBootTest` + H2 DB
-* `./gradlew test` 하나로 실행  
+* **단위 테스트** : 서비스 로직 단위
+* **통합 테스트** : `@SpringBootTest` + H2 DB  
+  `./gradlew test` 하나로 모두 실행됩니다.
+
 ---
 
 ## ⚙️ 설계 포인트
