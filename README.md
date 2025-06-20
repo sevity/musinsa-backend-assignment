@@ -26,7 +26,7 @@ com.musinsa
 git clone https://github.com/sevity/musinsa-backend-assignment
 cd musinsa-backend-assignment
 
-# 2) test
+# 2) test (unit + slice + integration)
 ./gradlew clean test
 
 # 3) run (in‑memory H2)
@@ -63,7 +63,7 @@ cd musinsa-backend-assignment
 
 ### 🔔 Error Handling
 
-모든 **실패** 응답은 아래 `ErrorResponse` 포맷을 따릅니다.
+모든 실패 응답은 아래 형식을 사용합니다.
 
 ```json
 {
@@ -97,7 +97,8 @@ GET /categories/cheapest-brands
 {
   "items":[
     {"category":"상의","brand":"C","price":10000},
-    {"category":"아우터","brand":"E","price":5000}
+    {"category":"아우터","brand":"E","price":5000},
+    ...
   ],
   "total":34100
 }
@@ -114,7 +115,8 @@ GET /brands/cheapest
   "brand": "D",
   "categories": [
     {"category": "바지", "price": 3000},
-    {"category": "모자", "price": 1500}
+    {"category": "모자", "price": 1500},
+    ...
   ],
   "total": 36100
 }
@@ -182,9 +184,17 @@ Content-Type: application/json
 
 ## 🧪 테스트
 
-* **단위 테스트** : 서비스 로직 단위
-* **통합 테스트** : `@SpringBootTest` + H2 DB  
-  `./gradlew test` 하나로 모두 실행됩니다.
+| 구분 | 주요 대상 | 비고 |
+|------|-----------|------|
+| **Unit** | Service / Controller | Mockito + MockMvc + AssertJ |
+| **Slice (@DataJpaTest)** | `BrandRepository`, `ProductRepository` | 실제 H2 SQL 로 커스텀 쿼리, 유니크 제약, exists 검증 |
+| **Integration (@SpringBootTest)** | API ↔︎ DB 전체 플로우 | 랜덤 포트 + TestRestTemplate + H2 (인메모리) |
+
+주요 인티그레이션 시나리오
+1. **Price Flow** : 더미 데이터 삽입 → 카테고리별/브랜드별 통계 API로 합계·최저가 검증
+2. **Product CRUD Flow** : 상품 생성 → 가격 수정(204) → 삭제 후 DB 존재 여부 확인
+
+> `./gradlew test` 한 번으로 **단위(Unit) → JPA Slice → 전구간(Integration)** 세 단계가 모두 실행됩니다.
 
 ---
 
