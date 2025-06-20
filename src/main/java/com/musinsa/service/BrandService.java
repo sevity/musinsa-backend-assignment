@@ -1,26 +1,41 @@
-// service/BrandService.java
 package com.musinsa.service;
 
 import com.musinsa.common.ApiException;
-import com.musinsa.domain.*;
+import com.musinsa.domain.Brand;
+import com.musinsa.domain.Category;
+import com.musinsa.domain.Product;
 import com.musinsa.repository.BrandRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
-@Service @RequiredArgsConstructor
+@Service
+@RequiredArgsConstructor
 public class BrandService {
     private final BrandRepository brandRepo;
 
     @Transactional
-    public void upsertBrand(String name, Map<String, Integer> priceMap) {
-        Brand brand = brandRepo.findByName(name).orElseGet(() -> new Brand(name));
-        brand.getProducts().clear();
+    public void createBrand(String name, Map<String, Integer> priceMap) {
+        if (brandRepo.existsByName(name)) {
+            throw new ApiException(409, "Brand already exists: " + name);
+        }
+        Brand brand = new Brand(name);
+        for (var e : priceMap.entrySet()) {
+            Category c = Category.fromKr(e.getKey());
+            brand.getProducts().add(new Product(brand, c, e.getValue()));
+        }
+        brandRepo.save(brand);
+    }
 
-        for (Map.Entry<String, Integer> e : priceMap.entrySet()) {
+    @Transactional
+    public void updateBrand(String name, Map<String, Integer> priceMap) {
+        Brand brand = brandRepo.findByName(name)
+                .orElseThrow(() -> new ApiException(404, "Brand not found: " + name));
+        // 완전 교체: 기존 상품 모두 삭제 후 재등록
+        brand.getProducts().clear();
+        for (var e : priceMap.entrySet()) {
             Category c = Category.fromKr(e.getKey());
             brand.getProducts().add(new Product(brand, c, e.getValue()));
         }
@@ -29,8 +44,8 @@ public class BrandService {
 
     @Transactional
     public void deleteBrand(String name) {
-        Brand b = brandRepo.findByName(name)
-                .orElseThrow(() -> new ApiException(404, "Brand not found"));
-        brandRepo.delete(b);
+        Brand brand = brandRepo.findByName(name)
+                .orElseThrow(() -> new ApiException(404, "Brand not found: " + name));
+        brandRepo.delete(brand);
     }
 }
