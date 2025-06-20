@@ -18,7 +18,7 @@ public class BrandService {
     @Transactional
     public void upsertBrand(String name, Map<String, Integer> priceMap) {
         Brand brand = brandRepo.findByName(name).orElseGet(() -> new Brand(name));
-        brand.getProducts().clear(); // 싹 갈아 끼우는 간단 전략
+        brand.getProducts().clear();
 
         for (Map.Entry<String, Integer> e : priceMap.entrySet()) {
             Category c = Category.fromKr(e.getKey());

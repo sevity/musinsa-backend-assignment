@@ -19,6 +19,6 @@ public enum Category {
 
     public static Category fromKr(String kr) {
         for (Category c : values()) if (c.krName.equals(kr)) return c;
-        throw new IllegalArgumentException("존재하지 않는 카테고리: " + kr);
+        throw new IllegalArgumentException("Unknown category: " + kr);
     }
 }
