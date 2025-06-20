@@ -35,6 +35,10 @@ public class ProductService {
             );
         }
 
+        if (productRepo.existsByBrandAndCategory(brand, category)) {
+            throw new ApiException(ErrorCode.PRODUCT_ALREADY_EXISTS);
+        }
+
         Product product = new Product(brand, category, price);
         return productRepo.save(product);
     }

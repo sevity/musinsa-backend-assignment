@@ -1,6 +1,7 @@
 // domain/Product.java
 package com.musinsa.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -12,6 +13,7 @@ public class Product {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY) @JoinColumn(name = "brand_id")
+    @JsonIgnoreProperties({"products", "hibernateLazyInitializer", "handler"})
     private Brand brand;
 
     @Enumerated(EnumType.STRING) @Column(nullable = false)

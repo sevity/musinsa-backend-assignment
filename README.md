@@ -40,9 +40,26 @@ cd musinsa-backend-assignment
 
 ---
 
+## 🖥 Swagger / OpenAPI
+
+모든 엔드포인트·DTO는 `@Operation`, `@Schema` 주석으로 문서화돼 있으며,
+
+애플리케이션 기동 후 아래 URL에서 확인할 수 있습니다.
+
+| URL | 설명 |
+|-----|-----|
+| `/swagger-ui/index.html` | Swagger UI |
+| `/v3/api-docs` | OpenAPI 3 JSON |
+
+에러 응답도 `ErrorResponse` 모델로 스키마화하여 문서로 확인 가능합니다.
+
+---
+
 ## 🔗 API 명세
 
 공통 Prefix : `/api/v1`
+![api.png](api.png)
+
 
 ### 🔔 Error Handling
 
@@ -191,7 +208,6 @@ Content-Type: application/json
 1. **배치 데이터 초기화** : CSV 업로드 → 서비스 호출.
 2. **Query 최적화** : Price 통계에 카테고리‑별 인덱스 추가, JPQL 쿼리.
 3. **캐싱 & 모니터링** : Redis 캐싱 + Micrometer/Prometheus.
-4. **Swagger (OpenAPI 3)** : `/swagger-ui.html` 자동 문서.
 5. **Frontend** : React + Tailwind 로 결과표 UI (Optional).
 
 

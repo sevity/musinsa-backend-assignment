@@ -1,6 +1,7 @@
 // domain/Brand.java
 package com.musinsa.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -8,6 +9,7 @@ import java.util.List;
 
 @Getter @Setter @NoArgsConstructor
 @Entity
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Brand {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
