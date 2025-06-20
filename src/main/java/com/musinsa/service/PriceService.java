@@ -1,7 +1,10 @@
 package com.musinsa.service;
 
 import com.musinsa.common.ApiException;
-import com.musinsa.domain.*;
+import com.musinsa.domain.Category;
+import com.musinsa.domain.Product;
+import com.musinsa.common.ErrorCode;
+import com.musinsa.domain.Brand;
 import com.musinsa.dto.CategoryStatResponse;
 import com.musinsa.dto.LowestByBrandResponse;
 import com.musinsa.dto.LowestByCategoryResponse;
@@ -19,6 +22,9 @@ public class PriceService {
     private final ProductRepository productRepo;
     private final BrandRepository brandRepo;
 
+    /**
+     * 구현1) 카테고리별 최저가 조회
+     */
     public LowestByCategoryResponse getLowestByCategory() {
         int total = 0;
         List<LowestByCategoryResponse.CategoryBrandPrice> list = new ArrayList<>();
@@ -26,7 +32,12 @@ public class PriceService {
         for (Category c : Category.values()) {
             Product min = productRepo.findByCategory(c).stream()
                     .min(Comparator.comparingInt(Product::getPrice))
-                    .orElseThrow(() -> new ApiException(404, c + " No Data"));
+                    .orElseThrow(() ->
+                            new ApiException(
+                                    ErrorCode.PRODUCT_NOT_FOUND,
+                                    c.getKrName() + " 카테고리에 상품이 없습니다."
+                            )
+                    );
 
             list.add(new LowestByCategoryResponse.CategoryBrandPrice(
                     c.getKrName(),
@@ -42,10 +53,16 @@ public class PriceService {
                 .build();
     }
 
+    /**
+     * 구현2) 단일 브랜드 최저가 번들
+     */
     public LowestByBrandResponse getLowestBySingleBrand() {
         List<Brand> brands = brandRepo.findAll();
         if (brands.isEmpty()) {
-            throw new ApiException(404, "No Brand Data");
+            throw new ApiException(
+                    ErrorCode.BRAND_NOT_FOUND,
+                    "등록된 브랜드가 없습니다."
+            );
         }
 
         Brand best = null;
@@ -55,6 +72,7 @@ public class PriceService {
         for (Brand b : brands) {
             Map<Category, Product> map = b.getProducts().stream()
                     .collect(Collectors.toMap(Product::getCategory, p -> p));
+            // 모든 카테고리 커버 확인
             if (map.size() != Category.values().length) {
                 continue;
             }
@@ -71,7 +89,10 @@ public class PriceService {
         }
 
         if (best == null) {
-            throw new ApiException(404, "No brand that has all categories");
+            throw new ApiException(
+                    ErrorCode.BRAND_NOT_FOUND,
+                    "모든 카테고리를 가진 브랜드가 없습니다."
+            );
         }
 
         List<LowestByBrandResponse.CategoryPrice> details = bestMap.values().stream()
@@ -88,17 +109,26 @@ public class PriceService {
                 .build();
     }
 
+    /**
+     * 구현3) 카테고리별 최저·최고가 조회
+     */
     public CategoryStatResponse getCategoryStat(String krCategory) {
         Category c;
         try {
             c = Category.fromKr(krCategory);
         } catch (IllegalArgumentException e) {
-            throw new ApiException(400, e.getMessage());
+            throw new ApiException(
+                    ErrorCode.VALIDATION_ERROR,
+                    "유효하지 않은 카테고리명입니다: " + krCategory
+            );
         }
 
         List<Product> list = productRepo.findByCategory(c);
         if (list.isEmpty()) {
-            throw new ApiException(404, "No Data");
+            throw new ApiException(
+                    ErrorCode.PRODUCT_NOT_FOUND,
+                    c.getKrName() + " 카테고리에 상품이 없습니다."
+            );
         }
 
         int minPrice = list.stream()

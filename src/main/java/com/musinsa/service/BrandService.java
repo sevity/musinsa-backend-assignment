@@ -1,6 +1,7 @@
 package com.musinsa.service;
 
 import com.musinsa.common.ApiException;
+import com.musinsa.common.ErrorCode;
 import com.musinsa.domain.Brand;
 import com.musinsa.domain.Category;
 import com.musinsa.domain.Product;
@@ -19,7 +20,7 @@ public class BrandService {
     @Transactional
     public void createBrand(String name, Map<String, Integer> priceMap) {
         if (brandRepo.existsByName(name)) {
-            throw new ApiException(409, "Brand already exists: " + name);
+            throw new ApiException(ErrorCode.BRAND_ALREADY_EXISTS);
         }
         Brand brand = new Brand(name);
         for (var e : priceMap.entrySet()) {
@@ -32,7 +33,7 @@ public class BrandService {
     @Transactional
     public void updateBrand(String name, Map<String, Integer> priceMap) {
         Brand brand = brandRepo.findByName(name)
-                .orElseThrow(() -> new ApiException(404, "Brand not found: " + name));
+                .orElseThrow(() -> new ApiException(ErrorCode.BRAND_NOT_FOUND));
         // 완전 교체: 기존 상품 모두 삭제 후 재등록
         brand.getProducts().clear();
         for (var e : priceMap.entrySet()) {
@@ -45,7 +46,7 @@ public class BrandService {
     @Transactional
     public void deleteBrand(String name) {
         Brand brand = brandRepo.findByName(name)
-                .orElseThrow(() -> new ApiException(404, "Brand not found: " + name));
+                .orElseThrow(() -> new ApiException(ErrorCode.BRAND_NOT_FOUND));
         brandRepo.delete(brand);
     }
 }
