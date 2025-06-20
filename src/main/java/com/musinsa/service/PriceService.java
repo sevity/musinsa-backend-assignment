@@ -126,8 +126,8 @@ public class PriceService {
         List<Product> list = productRepo.findByCategory(c);
         if (list.isEmpty()) {
             throw new ApiException(
-                    ErrorCode.PRODUCT_NOT_FOUND,
-                    c.getKrName() + " 카테고리에 상품이 없습니다."
+                    ErrorCode.CATEGORY_NOT_FOUND,
+                    "요청하신 카테고리를 찾을 수 없습니다."
             );
         }
 

@@ -102,27 +102,13 @@ public class ProductAdminController {
      */
     @Operation(summary = "상품 수정")
     @ApiResponses({
-            @ApiResponse(responseCode = "200", description = "수정 성공",
-                    content = @Content(
-                            mediaType = MediaType.APPLICATION_JSON_VALUE,
-                            schema    = @Schema(implementation = Product.class),
-                            examples  = @ExampleObject(
-                                    name  = "UpdatedProduct",
-                                    value = "{\n" +
-                                            "  \"id\": 1,\n" +
-                                            "  \"brand\": \"A\",\n" +
-                                            "  \"category\": \"상의\",\n" +
-                                            "  \"price\": 12000\n" +
-                                            "}"
-                            )
-                    )
-            ),
+            @ApiResponse(responseCode = "204", description = "수정 성공 (본문 없음)"),
             @ApiResponse(responseCode = "404", description = "상품 없음",
                     content = @Content(
                             mediaType = MediaType.APPLICATION_JSON_VALUE,
                             schema    = @Schema(implementation = ErrorResponse.class),
                             examples  = @ExampleObject(
-                                    name  = "ProductNotFound",
+                                    name = "ProductNotFound",
                                     value = "{\n" +
                                             "  \"status\": 404,\n" +
                                             "  \"code\": \"PRODUCT_NOT_FOUND\",\n" +
@@ -140,11 +126,10 @@ public class ProductAdminController {
     })
     @PutMapping(
             value    = "/{id}",
-            consumes = MediaType.APPLICATION_JSON_VALUE,
-            produces = MediaType.APPLICATION_JSON_VALUE
+            consumes = MediaType.APPLICATION_JSON_VALUE
     )
-    @ResponseStatus(HttpStatus.OK)
-    public Product updateProduct(
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void updateProduct(
             @Parameter(description = "수정할 상품 ID", example = "1")
             @PathVariable Long id,
 
@@ -164,7 +149,7 @@ public class ProductAdminController {
             )
             @RequestBody UpdateProductRequest req
     ) {
-        return productService.updateProduct(id, req.getPrice());
+        productService.updateProduct(id, req.getPrice());
     }
 
     /**

@@ -1,9 +1,7 @@
 package com.musinsa.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.util.Map;
 
@@ -13,6 +11,8 @@ import java.util.Map;
 @Schema(description = "브랜드 등록/수정 요청")
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)   // Swagger 모델 생성용
+@AllArgsConstructor(access = AccessLevel.PRIVATE)    // 빌더용 생성자
+@Builder
 public class BrandRequest {
 
         @Schema(description = "브랜드명", example = "A")
