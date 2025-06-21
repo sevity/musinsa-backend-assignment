@@ -1,0 +1,8 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* 간단한 다크 모드 */
+html.dark {
+  @apply bg-gray-900 text-gray-100;
+}
