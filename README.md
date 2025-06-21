@@ -14,7 +14,8 @@ com.musinsa
  ├─ repository   – Spring Data JPA
  ├─ domain       – JPA 엔티티 & Enum
  ├─ dto          – API 전용 DTO(record)
- └─ common       – 공통 예외·응답·헬퍼
+ ├─ common       – 공통 예외·응답·헬퍼
+ └─ frontend     – frontend관련 코드
 ```
 
 ---
@@ -31,6 +32,12 @@ cd musinsa-backend-assignment
 
 # 3) run (in‑memory H2)
 ./gradlew bootRun
+
+# 4) frontend run
+cd frontend
+pnpm i  # or npm i / yarn
+pnpm dev
+http://localhost:3000/admin 
 ```
 
 > H2 콘솔: `http://localhost:8080/h2-console`  
@@ -58,8 +65,7 @@ cd musinsa-backend-assignment
 ## 🔗 API 명세
 
 공통 Prefix : `/api/v1`
-![api.png](api.png)
-
+![apis.png](apis.png)
 
 ### 🔔 Error Handling
 
@@ -148,16 +154,21 @@ GET /categories/{category}/price-stats
 
 
 
-### 구현4) 브랜드 및 상품을 추가 / 업데이트 / 삭제하는 API
+### 구현4) 브랜드 및 상품을 추가/조회/수정/삭제하는 API
 
-| Method | Path               | 설명             |
-|--------|--------------------|------------------|
-| POST   | `/brands`          | 브랜드 등록      |
-| PUT    | `/brands/{name}`   | 브랜드 수정      |
-| DELETE | `/brands/{name}`   | 브랜드 삭제      |
-| POST   | `/products`        | 개별 상품 등록   |
-| PUT    | `/products/{id}`   | 상품 수정        |
-| DELETE | `/products/{id}`   | 상품 삭제        |
+| Method | Path                         | 설명                             |
+|--------|------------------------------|----------------------------------|
+| POST   | `/api/v1/brands`             | 신규 브랜드 등록                 |
+| GET    | `/api/v1/brands`             | 브랜드 이름 목록 조회            |
+| GET    | `/api/v1/brands/{name}`      | 브랜드 상세 조회 (카테고리별 가격) |
+| PUT    | `/api/v1/brands/{name}`      | 카테고리별 가격 수정             |
+| DELETE | `/api/v1/brands/{name}`      | 브랜드 삭제                      |
+| POST   | `/api/v1/products`           | 신규 상품 등록                   |
+| GET    | `/api/v1/products`           | 상품 목록 조회                   |
+| GET    | `/api/v1/products/{id}`      | 상품 상세 조회                   |
+| PUT    | `/api/v1/products/{id}`      | 상품 가격 수정                   |
+| DELETE | `/api/v1/products/{id}`      | 상품 삭제                        |
+
 
 **요청 예시 – 브랜드 등록**
 
@@ -181,6 +192,27 @@ Content-Type: application/json
 ```
 
 ---
+## 🚀 Frontend 하이라이트
+```
+root
+└─ frontend/              # Next.js 14 App Router 프로젝트
+    ├─ app/               # admin·categories UI 라우트
+    ├─ lib/               # api.ts, queryClient.ts, categories.ts, constants.ts …
+    └─ tailwind.config.ts # Tailwind
+```
+
+
+| 기능 | 상세 |
+|------|------|
+| **브랜드 / 상품 CRUD** | 등록·수정·삭제… 6 개 탭 분리, 드롭다운 자동 로드, 가격 세트 일괄 입력 |
+| **통계 뷰어** | 카테고리별 최저가, 브랜드별 통합 최저가, 카테고리 Price-Stats 조회 UI |
+| Tailwind UI |  모바일 반응형, 버튼 유틸 `.btn-primary` 등 |
+
+
+
+---
+
+
 
 ## 🧪 테스트
 
