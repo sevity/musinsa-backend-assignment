@@ -246,22 +246,35 @@ export function BrandCreate() {
 }
 
 /* ───────────── 브랜드 수정 ───────────── */
+// BrandUpdate 컴포넌트 전체
+
 function BrandUpdate() {
+  // 1) 브랜드 목록 조회
+  const { data: brandList = [] } = useQuery<string[]>({
+    queryKey: ["brandList"],
+    queryFn: () => api.get("/brands").then((r) => r.data),
+    staleTime: 60_000,
+  });
+
+  // 2) 수정할 브랜드명
   const [origName, setOrigName] = useState("");
-  const {
-    data,
-    isLoading,
-    error,
-  } = useQuery<BrandDetail, Error>({
+
+  // 3) 선택된 브랜드 상세 조회
+  const { data, isLoading, error } = useQuery<BrandDetail, Error>({
     queryKey: ["brand", origName],
-    queryFn: () => api.get(`/brands/${encodeURIComponent(origName)}`).then((r) => r.data),
+    queryFn: () =>
+      api
+        .get(`/brands/${encodeURIComponent(origName)}`)
+        .then((r) => r.data),
     enabled: !!origName,
   });
 
+  // 4) 가격 입력 상태
   const [prices, setPrices] = useState<Record<Category, string>>(
     Object.fromEntries(CATEGORIES.map((c) => [c, ""])) as any
   );
 
+  // 5) 상세 불러오면 prices 초기화
   useEffect(() => {
     if (data?.prices) {
       setPrices(
@@ -272,6 +285,7 @@ function BrandUpdate() {
     }
   }, [data]);
 
+  // 6) 수정 mutation
   const mutUpdate = useMutation({
     mutationFn: () =>
       api.put(`/brands/${encodeURIComponent(origName)}`, {
@@ -297,15 +311,30 @@ function BrandUpdate() {
       className="space-y-4 p-4 border rounded"
     >
       <h2 className="font-semibold">브랜드 수정</h2>
-      <LabeledInput
-        label="브랜드명"
-        value={origName}
-        onChange={setOrigName}
-        placeholder="예) Z"
-        required
-      />
+
+      {/* 브랜드명 드롭다운 */}
+      <div className="flex items-center gap-2">
+        <label className="w-36 text-sm">브랜드명</label>
+        <select
+          value={origName}
+          onChange={(e) => setOrigName(e.target.value)}
+          className="flex-1 border p-2 rounded bg-white"
+          required
+        >
+          <option value="" disabled>
+            — 브랜드 선택 —
+          </option>
+          {brandList.map((b) => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+      </div>
+
       {isLoading && <p>불러오는 중…</p>}
       {error && <p className="text-red-600">에러: {error.message}</p>}
+
       {data && (
         <fieldset className="border rounded p-2">
           <legend className="text-sm font-medium px-1">가격 수정</legend>
@@ -316,7 +345,10 @@ function BrandUpdate() {
                 <input
                   value={prices[cat]}
                   onChange={(e) =>
-                    setPrices((prev) => ({ ...prev, [cat]: e.target.value }))
+                    setPrices((prev) => ({
+                      ...prev,
+                      [cat]: e.target.value,
+                    }))
                   }
                   className="flex-1 border p-2 rounded"
                   placeholder="현재 가격"
@@ -326,7 +358,12 @@ function BrandUpdate() {
           </div>
         </fieldset>
       )}
-      <button className="btn-secondary" disabled={!data || isLoading}>
+
+      <button
+        type="submit"
+        className="btn-secondary"
+        disabled={!data || isLoading}
+      >
         ✏️ 수정
       </button>
     </form>
@@ -334,12 +371,31 @@ function BrandUpdate() {
 }
 
 /* ───────────── 브랜드 삭제 ───────────── */
+// BrandDelete 컴포넌트 수정본
+
 function BrandDelete() {
+  // 1) 브랜드 목록 조회
+  const { data: brandList = [] } = useQuery<string[]>({
+    queryKey: ["brandList"],
+    queryFn: () => api.get("/brands").then(r => r.data),
+    staleTime: 60_000,
+  });
+
+  // 2) 선택된 브랜드명
   const [name, setName] = useState("");
 
-  const mut = useCrud(() =>
-    api.delete(`/brands/${encodeURIComponent(name)}`)
-  );
+  // 3) 삭제 뮤테이션
+  const mut = useMutation({
+    mutationFn: () => api.delete(`/brands/${encodeURIComponent(name)}`),
+    onSuccess: () => {
+      // 목록 및 관련 조회 화면 갱신
+      queryClient.invalidateQueries({ queryKey: ["brandList"] });
+      queryClient.invalidateQueries({ queryKey: ["cheapestByCat"] });
+      queryClient.invalidateQueries({ queryKey: ["cheapestBrand"] });
+      alert("🗑️ 삭제 성공");
+    },
+    onError: (e: any) => alert(e.response?.data?.message ?? e.message),
+  });
 
   return (
     <form
@@ -351,17 +407,31 @@ function BrandDelete() {
     >
       <h2 className="font-semibold">브랜드 삭제</h2>
 
-      <LabeledInput
-        label="브랜드명"
-        value={name}
-        onChange={setName}
-        required
-      />
+      {/* 드롭다운으로 브랜드 선택 */}
+      <div className="flex items-center gap-2">
+        <label className="w-36 text-sm">브랜드명</label>
+        <select
+          value={name}
+          onChange={e => setName(e.target.value)}
+          className="flex-1 border p-2 rounded bg-white"
+          required
+        >
+          <option value="">— 브랜드 선택 —</option>
+          {brandList.map(b => (
+            <option key={b} value={b}>
+              {b}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <button className="btn-danger">🗑️ 삭제</button>
+      <button type="submit" className="btn-danger" disabled={!name}>
+        🗑️ 삭제
+      </button>
     </form>
   );
 }
+
 
 /* ───────────── 상품 등록 ───────────── */
 function ProductCreate() {
