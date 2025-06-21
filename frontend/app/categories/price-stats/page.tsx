@@ -3,7 +3,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useState } from "react";
-import { CATEGORIES } from "@/lib/categories";
+import { CATEGORIES } from "../../../lib/categories";
 
 export default function CategorySearch() {
   const router = useRouter();

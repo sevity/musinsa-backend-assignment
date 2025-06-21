@@ -1,3 +1,4 @@
+// src/main/java/com/musinsa/service/ProductService.java
 package com.musinsa.service;
 
 import com.musinsa.common.ApiException;
@@ -5,11 +6,15 @@ import com.musinsa.common.ErrorCode;
 import com.musinsa.domain.Brand;
 import com.musinsa.domain.Category;
 import com.musinsa.domain.Product;
+import com.musinsa.dto.ProductResponse;
 import com.musinsa.repository.BrandRepository;
 import com.musinsa.repository.ProductRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -80,5 +85,38 @@ public class ProductService {
                 ));
 
         productRepo.delete(p);
+    }
+
+    /**
+     * 등록된 모든 상품을 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public List<ProductResponse> getAllProducts() {
+        return productRepo.findAll().stream()
+                .map(p -> new ProductResponse(
+                        p.getId(),
+                        p.getBrand().getName(),
+                        p.getCategory(),
+                        p.getPrice()
+                ))
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * 단일 상품의 상세 정보를 조회합니다.
+     */
+    @Transactional(readOnly = true)
+    public ProductResponse getProduct(Long id) {
+        Product p = productRepo.findById(id)
+                .orElseThrow(() -> new ApiException(
+                        ErrorCode.PRODUCT_NOT_FOUND,
+                        String.format("상품 ID %d를 찾을 수 없습니다.", id)
+                ));
+        return new ProductResponse(
+                p.getId(),
+                p.getBrand().getName(),
+                p.getCategory(),
+                p.getPrice()
+        );
     }
 }

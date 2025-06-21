@@ -12,10 +12,12 @@ import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-import lombok.RequiredArgsConstructor;
+
+import java.util.List;
 
 @Tag(name = "BrandAdmin", description = "브랜드 관리 API")
 @RestController
@@ -77,6 +79,39 @@ public class BrandAdminController {
     }
 
     /**
+     * 브랜드 이름 리스트 조회
+     */
+    @Operation(summary = "브랜드 목록 조회")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "브랜드 리스트 반환")
+    })
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public List<String> listBrands() {
+        return brandService.getAllBrandNames();
+    }
+
+    /**
+     * 브랜드 상세(가격 맵) 조회
+     */
+    @Operation(summary = "브랜드 상세 조회")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "조회 성공",
+                    content = @Content(schema = @Schema(implementation = BrandRequest.class))),
+            @ApiResponse(responseCode = "404", description = "브랜드 없음",
+                    content = @Content(schema = @Schema(implementation = ErrorResponse.class)))
+    })
+    @GetMapping(
+            value    = "/{name}",
+            produces = MediaType.APPLICATION_JSON_VALUE
+    )
+    public BrandRequest getBrand(
+            @Parameter(description = "조회할 브랜드 이름", example = "Z")
+            @PathVariable String name
+    ) {
+        return brandService.getBrand(name);
+    }
+
+    /**
      * 기존 브랜드 전체 정보 수정
      */
     @Operation(summary = "브랜드 수정")
@@ -115,7 +150,6 @@ public class BrandAdminController {
                             examples  = @ExampleObject(
                                     name  = "UpdateBrand",
                                     value = "{\n" +
-                                            "  \"brand\": \"A\",\n" +
                                             "  \"prices\": {\n" +
                                             "    \"상의\": 11500,\n" +
                                             "    \"아우터\": 5200\n" +

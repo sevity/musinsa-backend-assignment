@@ -3,10 +3,24 @@
 
 import { Tab } from "@headlessui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "@/lib/api";
 import { queryClient } from "@/lib/queryClient";
 import { CATEGORIES, SAMPLE_PRICES, Category } from "@/lib/categories";
+
+
+// 브랜드 상세 조회 시 사용할 타입 정의
+type BrandDetail = {
+  brand: string;
+  prices: Record<Category, number>;
+};
+// 프론트에서 사용하기 위한 ProductResponse 타입 정의
+type ProductResponse = {
+  id: number;
+  brand: string;
+  category: Category;
+  price: number;
+};
 
 /* ───────────── 공통 유틸 ───────────── */
 const cls = (...c: string[]) => c.filter(Boolean).join(" ");
@@ -28,7 +42,8 @@ function LabeledInput({
   placeholder,
   type = "text",
   required = false,
-  className = ""
+  className = "",
+  readOnly = false
 }: {
   label: string;
   value: string | number;
@@ -37,6 +52,7 @@ function LabeledInput({
   type?: string;
   required?: boolean;
   className?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div className={`flex items-center gap-2 ${className}`}>
@@ -47,11 +63,13 @@ function LabeledInput({
         placeholder={placeholder}
         type={type}
         required={required}
+        readOnly={readOnly}
         className="flex-1 border p-2 rounded"
       />
     </div>
   );
 }
+
 
 /* ───────────── 선택 컴포넌트 ───────────── */
 const BrandSelector = ({
@@ -155,26 +173,35 @@ export default function Admin() {
 }
 
 /* ───────────── 브랜드 등록 ───────────── */
-function BrandCreate() {
+export function BrandCreate() {
   const [name, setName] = useState("");
   const [prices, setPrices] = useState<Record<Category, string>>(
     Object.fromEntries(
-      CATEGORIES.map(c => [c, SAMPLE_PRICES[c].toString()])
-    ) as any
+      CATEGORIES.map((c) => [c, SAMPLE_PRICES[c].toString()])
+    ) as Record<Category, string>
   );
 
-  const mut = useCrud(() =>
-    api.post("/brands", {
-      brand: name,
-      prices: Object.fromEntries(
-        Object.entries(prices).map(([c, p]) => [c, Number(p)])
-      )
-    })
-  );
+  const mut = useMutation({
+    mutationFn: () =>
+      api.post("/brands", {
+        brand: name,
+        prices: Object.fromEntries(
+          Object.entries(prices).map(([c, p]) => [c, Number(p)])
+        ),
+      }),
+    onSuccess: () => {
+      // 최신 데이터 반영을 위해 관련 쿼리 무효화
+      queryClient.invalidateQueries({ queryKey: ["cheapestByCat"] });
+      queryClient.invalidateQueries({ queryKey: ["brandList"] });
+      alert("✅ 등록 성공");
+    },
+    onError: (e: any) =>
+      alert(e.response?.data?.message ?? e.message ?? "Error"),
+  });
 
   return (
     <form
-      onSubmit={e => {
+      onSubmit={(e) => {
         e.preventDefault();
         mut.mutate();
       }}
@@ -182,18 +209,27 @@ function BrandCreate() {
     >
       <h2 className="font-semibold">브랜드 등록</h2>
 
-      <LabeledInput label="브랜드명" value={name} onChange={setName} required />
+      <LabeledInput
+        label="브랜드명"
+        value={name}
+        onChange={setName}
+        placeholder="예) Z"
+        required
+      />
 
       <fieldset className="border rounded p-2">
         <legend className="text-sm font-medium px-1">가격 세트</legend>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-          {CATEGORIES.map(cat => (
+          {CATEGORIES.map((cat) => (
             <div key={cat} className="flex items-center gap-2">
               <label className="w-24 text-sm">{cat}</label>
               <input
                 value={prices[cat]}
-                onChange={e =>
-                  setPrices(prev => ({ ...prev, [cat]: e.target.value }))
+                onChange={(e) =>
+                  setPrices((prev) => ({
+                    ...prev,
+                    [cat]: e.target.value,
+                  }))
                 }
                 className="flex-1 border p-2 rounded"
               />
@@ -202,7 +238,9 @@ function BrandCreate() {
         </div>
       </fieldset>
 
-      <button className="btn-primary">➕ 등록</button>
+      <button type="submit" className="btn-primary">
+        ➕ 등록
+      </button>
     </form>
   );
 }
@@ -210,66 +248,87 @@ function BrandCreate() {
 /* ───────────── 브랜드 수정 ───────────── */
 function BrandUpdate() {
   const [origName, setOrigName] = useState("");
-  const [newName, setNewName] = useState("");
+  const {
+    data,
+    isLoading,
+    error,
+  } = useQuery<BrandDetail, Error>({
+    queryKey: ["brand", origName],
+    queryFn: () => api.get(`/brands/${encodeURIComponent(origName)}`).then((r) => r.data),
+    enabled: !!origName,
+  });
+
   const [prices, setPrices] = useState<Record<Category, string>>(
-    Object.fromEntries(CATEGORIES.map(c => [c, ""])) as any
+    Object.fromEntries(CATEGORIES.map((c) => [c, ""])) as any
   );
 
-  const mut = useCrud(() =>
-    api.put(`/brands/${encodeURIComponent(origName)}`, {
-      name: newName || undefined,
-      prices: Object.fromEntries(
-        Object.entries(prices)
-          .filter(([, v]) => v)
-          .map(([c, p]) => [c, Number(p)])
-      )
-    })
-  );
+  useEffect(() => {
+    if (data?.prices) {
+      setPrices(
+        Object.fromEntries(
+          CATEGORIES.map((c) => [c, String(data.prices[c] ?? "")])
+        ) as any
+      );
+    }
+  }, [data]);
+
+  const mutUpdate = useMutation({
+    mutationFn: () =>
+      api.put(`/brands/${encodeURIComponent(origName)}`, {
+        prices: Object.fromEntries(
+          Object.entries(prices)
+            .filter(([, v]) => v)
+            .map(([c, p]) => [c, Number(p)])
+        ),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["brand", origName] });
+      alert("✅ 수정 성공");
+    },
+    onError: (e: any) => alert(e?.response?.data?.message ?? e.message),
+  });
 
   return (
     <form
-      onSubmit={e => {
+      onSubmit={(e) => {
         e.preventDefault();
-        mut.mutate();
+        mutUpdate.mutate();
       }}
       className="space-y-4 p-4 border rounded"
     >
       <h2 className="font-semibold">브랜드 수정</h2>
-
       <LabeledInput
-        label="기존 브랜드명"
+        label="브랜드명"
         value={origName}
         onChange={setOrigName}
+        placeholder="예) Z"
         required
       />
-      <LabeledInput
-        label="새 브랜드명"
-        value={newName}
-        onChange={setNewName}
-        placeholder="변경 없으면 비워두기"
-      />
-
-      <details className="border rounded p-2">
-        <summary className="cursor-pointer font-medium">
-          가격 수정 (선택)
-        </summary>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
-          {CATEGORIES.map(cat => (
-            <div key={cat} className="flex items-center gap-2">
-              <label className="w-24 text-sm">{cat}</label>
-              <input
-                value={prices[cat]}
-                onChange={e =>
-                  setPrices(prev => ({ ...prev, [cat]: e.target.value }))
-                }
-                className="flex-1 border p-2 rounded"
-              />
-            </div>
-          ))}
-        </div>
-      </details>
-
-      <button className="btn-secondary">✏️ 수정</button>
+      {isLoading && <p>불러오는 중…</p>}
+      {error && <p className="text-red-600">에러: {error.message}</p>}
+      {data && (
+        <fieldset className="border rounded p-2">
+          <legend className="text-sm font-medium px-1">가격 수정</legend>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-2">
+            {CATEGORIES.map((cat) => (
+              <div key={cat} className="flex items-center gap-2">
+                <label className="w-24 text-sm">{cat}</label>
+                <input
+                  value={prices[cat]}
+                  onChange={(e) =>
+                    setPrices((prev) => ({ ...prev, [cat]: e.target.value }))
+                  }
+                  className="flex-1 border p-2 rounded"
+                  placeholder="현재 가격"
+                />
+              </div>
+            ))}
+          </div>
+        </fieldset>
+      )}
+      <button className="btn-secondary" disabled={!data || isLoading}>
+        ✏️ 수정
+      </button>
     </form>
   );
 }
@@ -351,28 +410,54 @@ function ProductCreate() {
 
 /* ───────────── 상품 수정 ───────────── */
 function ProductUpdate() {
-  const { data: brandList = [] } = useQuery<string[]>({
-    queryKey: ["brandList"],
-    queryFn: () => api.get("/brands").then(r => r.data),
-    staleTime: 60000
+  // 1) 상품 목록 조회
+  const { data: products = [] } = useQuery<ProductResponse[]>({
+    queryKey: ["productList"],
+    queryFn: () => api.get("/products").then((r) => r.data),
+    staleTime: 60_000,
   });
 
-  const [pid, setPid] = useState("");
-  const [brand, setBrand] = useState("");
-  const [category, setCategory] = useState<Category>(CATEGORIES[0]);
+  // 1-1) 브랜드명 중복 제거
+  const brandList = Array.from(new Set(products.map((p) => p.brand)));
+
+  // 2) 선택된 상품 ID
+  const [pid, setPid] = useState<number | "">("");
+
+  // 3) 상품 상세 조회
+  const { data: prod, isLoading: loadingProd } = useQuery<ProductResponse>({
+    queryKey: ["product", pid],
+    queryFn: () => api.get(`/products/${pid}`).then((r) => r.data),
+    enabled: pid !== "",
+  });
+
+  // 4) 가격 상태
   const [price, setPrice] = useState("");
 
-  const mut = useCrud(() =>
-    api.put(`/products/${pid}`, {
-      brand: brand || undefined,
-      category,
-      price: price ? Number(price) : undefined
-    })
-  );
+  // 5) prod 변경 시 가격 초기화
+  useEffect(() => {
+    if (prod) {
+      setPrice(String(prod.price));
+    }
+  }, [prod]);
+
+  // 6) 수정 mutation
+  const mut = useMutation({
+    mutationFn: () =>
+      api.put(`/products/${pid}`, {
+        price: Number(price),
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["productList"] });
+      queryClient.invalidateQueries({ queryKey: ["cheapestByCat"] });
+      queryClient.invalidateQueries({ queryKey: ["cheapestBrand"] });
+      alert("✅ 수정 성공");
+    },
+    onError: (e: any) => alert(e.response?.data?.message ?? e.message),
+  });
 
   return (
     <form
-      onSubmit={e => {
+      onSubmit={(e) => {
         e.preventDefault();
         mut.mutate();
       }}
@@ -380,51 +465,133 @@ function ProductUpdate() {
     >
       <h2 className="font-semibold">상품 수정</h2>
 
-      <LabeledInput
-        label="상품 ID"
-        value={pid}
-        onChange={setPid}
-        required
-      />
-      <BrandSelector brand={brand} setBrand={setBrand} list={brandList} />
-      <CategorySelector category={category} setCategory={setCategory} />
-      <LabeledInput
-        label="가격"
-        value={price}
-        onChange={setPrice}
-        type="number"
-        placeholder="변경 없으면 비워두기"
-      />
+      {/* 상품 선택 드롭다운 */}
+      <div className="flex items-center gap-2">
+        <label className="w-36 text-sm">상품 선택</label>
+        <select
+          value={pid}
+          onChange={(e) =>
+            setPid(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          className="flex-1 border p-2 rounded bg-white"
+          required
+        >
+          <option value="">— 상품 선택 —</option>
+          {products.map((p) => (
+            <option key={p.id} value={p.id}>
+              #{p.id} {p.brand} / {p.category} ({p.price.toLocaleString()}원)
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <button className="btn-secondary">✏️ 수정</button>
+      {/* 로딩 & 에러 */}
+      {loadingProd && <p>불러오는 중…</p>}
+
+      {/* 상세 폼 (prod 가 있으면) */}
+      {prod && (
+        <>
+          {/* 브랜드/카테고리 readonly 표시 */}
+          <LabeledInput
+            label="브랜드"
+            value={prod.brand}
+            onChange={() => {}}
+            className="opacity-50"
+            readOnly
+          />
+          <LabeledInput
+            label="카테고리"
+            value={prod.category}
+            onChange={() => {}}
+            className="opacity-50"
+            readOnly
+          />
+
+          {/* 가격만 수정 가능 */}
+          <LabeledInput
+            label="가격"
+            value={price}
+            onChange={setPrice}
+            type="number"
+            required
+          />
+        </>
+      )}
+
+      <button
+        type="submit"
+        disabled={!prod}
+        className="btn-secondary"
+      >
+        ✏️ 수정
+      </button>
     </form>
   );
 }
 
+
+
 /* ───────────── 상품 삭제 ───────────── */
 function ProductDelete() {
-  const [pid, setPid] = useState("");
+  // 1) 상품 목록 조회
+  const { data: products = [] } = useQuery<ProductResponse[]>({
+    queryKey: ["productList"],
+    queryFn: () => api.get("/products").then(r => r.data),
+    staleTime: 60_000,
+  });
 
-  const mut = useCrud(() => api.delete(`/products/${pid}`));
+  // 2) 선택된 상품 ID
+  const [pid, setPid] = useState<number | "">("");
+
+  // 3) 삭제 mutation
+  const delMut = useMutation({
+    mutationFn: () => api.delete(`/products/${pid}`),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["productList"] });
+      queryClient.invalidateQueries({ queryKey: ["cheapestByCat"] });
+      queryClient.invalidateQueries({ queryKey: ["cheapestBrand"] });
+      alert("🗑️ 삭제 성공");
+    },
+    onError: (e: any) => alert(e.response?.data?.message ?? e.message),
+  });
 
   return (
     <form
       onSubmit={e => {
         e.preventDefault();
-        mut.mutate();
+        delMut.mutate();
       }}
       className="space-y-4 p-4 border rounded"
     >
       <h2 className="font-semibold">상품 삭제</h2>
 
-      <LabeledInput
-        label="상품 ID"
-        value={pid}
-        onChange={setPid}
-        required
-      />
+      {/* 상품 선택 드롭다운 */}
+      <div className="flex items-center gap-2">
+        <label className="w-36 text-sm">상품 선택</label>
+        <select
+          value={pid}
+          onChange={e =>
+            setPid(e.target.value === "" ? "" : Number(e.target.value))
+          }
+          className="flex-1 border p-2 rounded bg-white"
+          required
+        >
+          <option value="">— 상품 선택 —</option>
+          {products.map(p => (
+            <option key={p.id} value={p.id}>
+              #{p.id} {p.brand} / {p.category} ({p.price.toLocaleString()}원)
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <button className="btn-danger">🗑️ 삭제</button>
+      <button
+        type="submit"
+        disabled={!pid}
+        className="btn-danger"
+      >
+        🗑️ 삭제
+      </button>
     </form>
   );
 }
