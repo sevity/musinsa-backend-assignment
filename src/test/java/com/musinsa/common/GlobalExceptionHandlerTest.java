@@ -28,13 +28,19 @@ class GlobalExceptionHandlerTest {
     }
 
     @RestController
-    @RequestMapping("/test")
-    static class TestController {
-        @GetMapping("/api-ex/{code}")
-        public void throwApiException(@PathVariable String code) {
-            // PathVariable로 받은 code를 ErrorCode.valueOf()로 변환해 ApiException 던짐
-            throw new ApiException(ErrorCode.valueOf(code));
-        }
+        @RequestMapping("/test")
+        static class TestController {
+            @GetMapping("/api-ex/{code}")
+            public void throwApiException(@PathVariable String code) {
+                // PathVariable로 받은 code를 ErrorCode.valueOf()로 변환해 ApiException 던짐
+                throw new ApiException(ErrorCode.valueOf(code));
+            }
+
+            @GetMapping("/api-ex-custom")
+            public void throwApiExceptionWithCustomMessage() {
+                // 특정 메시지를 전달하여 ApiException 생성
+                throw new ApiException(ErrorCode.PRODUCT_NOT_FOUND, "특정 메시지");
+            }
 
         @GetMapping("/generic-ex")
         public void throwGenericException() {
@@ -52,6 +58,17 @@ class GlobalExceptionHandlerTest {
                 .andExpect(jsonPath("$.status").value(errorCode.getStatus().value()))
                 .andExpect(jsonPath("$.code").value(errorCode.getCode()))
                 .andExpect(jsonPath("$.message").value(errorCode.getDefaultMessage()));
+    }
+
+    @Test
+    void handleApiException_customMessage_overridesDefault() throws Exception {
+        mockMvc.perform(get("/test/api-ex-custom")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().is(ErrorCode.PRODUCT_NOT_FOUND.getStatus().value()))
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("$.status").value(ErrorCode.PRODUCT_NOT_FOUND.getStatus().value()))
+                .andExpect(jsonPath("$.code").value(ErrorCode.PRODUCT_NOT_FOUND.getCode()))
+                .andExpect(jsonPath("$.message").value("특정 메시지"));
     }
 
     @Test
