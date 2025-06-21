@@ -74,6 +74,20 @@ class BrandServiceTest {
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.BRAND_ALREADY_EXISTS);
     }
 
+    @Test
+    void createBrand_invalidCategory_throwsValidationError() {
+        String name = "New";
+        when(brandRepo.existsByName(name)).thenReturn(false);
+
+        Map<String, Integer> priceMap = Map.of("잘못된", 1000);
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> brandService.createBrand(name, priceMap));
+
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR);
+        assertThat(ex.getMessage()).isEqualTo("유효하지 않은 카테고리명입니다: 잘못된");
+    }
+
     /*────────────────────────────────────────────────────────────────
      * updateBrand
      *────────────────────────────────────────────────────────────────*/
@@ -115,6 +129,21 @@ class BrandServiceTest {
                 () -> brandService.updateBrand(name, Map.of()));
 
         assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.BRAND_NOT_FOUND);
+    }
+
+    @Test
+    void updateBrand_invalidCategory_throwsValidationError() {
+        String name = "Up";
+        Brand b = new Brand(name);
+        when(brandRepo.findByName(name)).thenReturn(Optional.of(b));
+
+        Map<String, Integer> priceMap = Map.of("없음", 1000);
+
+        ApiException ex = assertThrows(ApiException.class,
+                () -> brandService.updateBrand(name, priceMap));
+
+        assertThat(ex.getErrorCode()).isEqualTo(ErrorCode.VALIDATION_ERROR);
+        assertThat(ex.getMessage()).isEqualTo("유효하지 않은 카테고리명입니다: 없음");
     }
 
     /*────────────────────────────────────────────────────────────────

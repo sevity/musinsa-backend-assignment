@@ -24,7 +24,15 @@ public class BrandService {
         }
         Brand brand = new Brand(name);
         for (var e : priceMap.entrySet()) {
-            Category c = Category.fromKr(e.getKey());
+            Category c;
+            try {
+                c = Category.fromKr(e.getKey());
+            } catch (IllegalArgumentException ex) {
+                throw new ApiException(
+                        ErrorCode.VALIDATION_ERROR,
+                        "유효하지 않은 카테고리명입니다: " + e.getKey()
+                );
+            }
             brand.getProducts().add(new Product(brand, c, e.getValue()));
         }
         brandRepo.save(brand);
@@ -37,7 +45,15 @@ public class BrandService {
         // 완전 교체: 기존 상품 모두 삭제 후 재등록
         brand.getProducts().clear();
         for (var e : priceMap.entrySet()) {
-            Category c = Category.fromKr(e.getKey());
+            Category c;
+            try {
+                c = Category.fromKr(e.getKey());
+            } catch (IllegalArgumentException ex) {
+                throw new ApiException(
+                        ErrorCode.VALIDATION_ERROR,
+                        "유효하지 않은 카테고리명입니다: " + e.getKey()
+                );
+            }
             brand.getProducts().add(new Product(brand, c, e.getValue()));
         }
         brandRepo.save(brand);
