@@ -15,6 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -47,16 +48,20 @@ public class BrandService {
 
     @Transactional
     public void updateBrand(String name, Map<String, Integer> priceMap) {
+
         Brand brand = brandRepo.findByName(name)
                 .orElseThrow(() -> new ApiException(ErrorCode.BRAND_NOT_FOUND));
 
-        // 1) 요청된 카테고리별 가격대로 기존 상품 업데이트 또는 신규 등록
-        for (var entry : priceMap.entrySet()) {
-            String krName = entry.getKey();
-            int newPrice = entry.getValue();
-            Category category;
+        /* 1) update-or-insert 요청 카테고리 */
+        for (Map.Entry<String, Integer> e : priceMap.entrySet()) {
+
+            String krName   = e.getKey();
+            int    newPrice = e.getValue();
+
+            /* ✨ 카테고리 파싱 → 예외 래핑 */
+            Category cat;
             try {
-                category = Category.fromKr(krName);
+                cat = Category.fromKr(krName);
             } catch (IllegalArgumentException ex) {
                 throw new ApiException(
                         ErrorCode.VALIDATION_ERROR,
@@ -64,26 +69,28 @@ public class BrandService {
                 );
             }
 
-            // 기존 상품이 있으면 가격만 update
-            Optional<Product> existing = productRepo.findByBrandAndCategory(brand, category);
-            if (existing.isPresent()) {
-                existing.get().setPrice(newPrice);
+            /* update or insert 로직 그대로 … */
+            Optional<Product> found =
+                    productRepo != null
+                            ? productRepo.findByBrandAndCategory(brand, cat)
+                            : brand.getProducts().stream()
+                            .filter(p -> p.getCategory() == cat)
+                            .findFirst();
+
+            if (found.isPresent()) {
+                found.get().setPrice(newPrice);
             } else {
-                // 없으면 새로 추가
-                Product p = new Product(brand, category, newPrice);
-                brand.getProducts().add(p);
+                brand.getProducts().add(new Product(brand, cat, newPrice));
             }
         }
 
-        // 2) 선택: priceMap에 포함되지 않은 기존 카테고리 상품은 삭제하려면 아래 주석 해제
-    /*
-    var toRemove = brand.getProducts().stream()
-        .filter(p -> !priceMap.containsKey(p.getCategory().getKrName()))
-        .collect(Collectors.toList());
-    brand.getProducts().removeAll(toRemove);
-    */
+        /* 2) ✂️  priceMap 에 포함되지 않은 카테고리 상품 삭제  */
+        Set<String> reqCats = priceMap.keySet();
+        brand.getProducts().removeIf(p ->
+                !reqCats.contains(p.getCategory().getKrName())
+        );
 
-        // 3) 변경된 컬렉션은 영속성 컨텍스트에 반영됨
+        /* 3) 변경 저장 */
         brandRepo.save(brand);
     }
 

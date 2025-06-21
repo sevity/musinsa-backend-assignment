@@ -79,13 +79,15 @@ http://localhost:3000/admin
 }
 ```
 
-| Enum                       | HTTP | 기본 메시지                           |
-|---------------------------|------|---------------------------------------|
-| `BRAND_NOT_FOUND`         | 404  | 브랜드를 찾을 수 없습니다.            |
-| `BRAND_ALREADY_EXISTS`    | 409  | 이미 존재하는 브랜드입니다.           |
-| `PRODUCT_NOT_FOUND`       | 404  | 상품을 찾을 수 없습니다.              |
-| `VALIDATION_ERROR`        | 400  | 요청 값이 유효하지 않습니다.          |
-| `INTERNAL_ERROR`          | 500  | 서버 오류가 발생했습니다.             |
+| Enum                       | HTTP | 기본 메시지                                                   |
+|---------------------------|------|---------------------------------------------------------------|
+| `BRAND_NOT_FOUND`         | 404  | 브랜드를 찾을 수 없습니다.                                     |
+| `CATEGORY_NOT_FOUND`      | 404  | 카테고리를 찾을 수 없습니다.                                  |
+| `BRAND_ALREADY_EXISTS`    | 409  | 이미 존재하는 브랜드입니다.                                   |
+| `PRODUCT_NOT_FOUND`       | 404  | 상품을 찾을 수 없습니다.                                       |
+| `PRODUCT_ALREADY_EXISTS`  | 409  | 해당 브랜드·카테고리 조합의 상품이 이미 존재합니다.            |
+| `VALIDATION_ERROR`        | 400  | 요청 값이 유효하지 않습니다.                                   |
+| `INTERNAL_ERROR`          | 500  | 서버 오류가 발생했습니다.   
 
 > `ErrorCode` enum 에 **HTTP 상태, 에러 코드, 기본 메시지**를 한꺼번에 정의하고,  
 > 서비스 레이어에서 `throw new ApiException(ErrorCode.BRAND_NOT_FOUND);` 처럼 사용합니다.  

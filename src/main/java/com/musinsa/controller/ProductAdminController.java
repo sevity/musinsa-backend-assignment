@@ -2,6 +2,7 @@
 package com.musinsa.controller;
 
 import com.musinsa.common.ErrorResponse;
+import com.musinsa.domain.Category;
 import com.musinsa.dto.CreateProductRequest;
 import com.musinsa.dto.UpdateProductRequest;
 import com.musinsa.dto.ProductResponse;
@@ -102,17 +103,18 @@ public class ProductAdminController {
             )
             @RequestBody CreateProductRequest req
     ) {
-        Product p = productService.createProduct(
+        Product saved = productService.createProduct(
                 req.getBrand(),
                 req.getCategory(),
                 req.getPrice()
         );
-        // domain.Product → dto.ProductResponse 변환
+
+        /* Lazy NPE 방지를 위해 요청값으로 응답 DTO 구성  */
         return new ProductResponse(
-                p.getId(),
-                p.getBrand().getName(),
-                p.getCategory(),
-                p.getPrice()
+                saved.getId(),
+                req.getBrand(),
+                Category.fromKr(req.getCategory()),
+                saved.getPrice()
         );
     }
 

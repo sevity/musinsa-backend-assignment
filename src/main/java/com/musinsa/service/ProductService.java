@@ -48,10 +48,8 @@ public class ProductService {
 
         // 중복 검사: 이미 존재하는 브랜드·카테고리 조합인지 확인
         if (productRepo.existsByBrandAndCategory(brand, category)) {
-            throw new ApiException(
-                    ErrorCode.PRODUCT_ALREADY_EXISTS,
-                    String.format("브랜드 '%s'의 카테고리 '%s' 상품이 이미 존재합니다.", brandName, categoryKr)
-            );
+            /* 기본 메시지(해당 브랜드·카테고리 조합의 상품이 이미 존재합니다.) 사용 */
+            throw new ApiException(ErrorCode.PRODUCT_ALREADY_EXISTS);
         }
 
         Product product = new Product(brand, category, price);
