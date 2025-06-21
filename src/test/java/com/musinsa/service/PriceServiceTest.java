@@ -162,4 +162,32 @@ class PriceServiceTest {
         assertThat(ex.getMessage())
                 .isEqualTo("요청하신 카테고리를 찾을 수 없습니다.");
     }
+
+    @Test
+    void getLowestBySingleBrand_duplicateCategory_usesCheapestPrice() {
+        Brand b = new Brand("DupBrand");
+        List<Product> prods = new ArrayList<>();
+        prods.add(new Product(b, Category.TOP, 1500));
+        prods.add(new Product(b, Category.TOP, 1000));
+        int total = 1000;
+        for (Category c : Category.values()) {
+            if (c == Category.TOP) continue;
+            Product p = new Product(b, c, c.ordinal() + 200);
+            prods.add(p);
+            total += p.getPrice();
+        }
+        b.setProducts(prods);
+        when(brandRepo.findAll()).thenReturn(List.of(b));
+
+        LowestByBrandResponse resp = priceService.getLowestBySingleBrand();
+
+        assertThat(resp.getBrand()).isEqualTo("DupBrand");
+        assertThat(resp.getCategories()).hasSize(Category.values().length);
+        assertThat(resp.getCategories())
+                .filteredOn(cp -> cp.getCategory().equals(Category.TOP.getKrName()))
+                .first()
+                .extracting("price")
+                .isEqualTo(1000);
+        assertThat(resp.getTotal()).isEqualTo(total);
+    }
 }

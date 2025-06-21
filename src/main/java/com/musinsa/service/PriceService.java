@@ -71,7 +71,11 @@ public class PriceService {
 
         for (Brand b : brands) {
             Map<Category, Product> map = b.getProducts().stream()
-                    .collect(Collectors.toMap(Product::getCategory, p -> p));
+                    .collect(Collectors.toMap(
+                            Product::getCategory,
+                            p -> p,
+                            (a, bProd) -> a.getPrice() <= bProd.getPrice() ? a : bProd
+                    ));
             // 모든 카테고리 커버 확인
             if (map.size() != Category.values().length) {
                 continue;

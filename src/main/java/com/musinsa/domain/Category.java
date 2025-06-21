@@ -18,6 +18,9 @@ public enum Category {
     Category(String krName) { this.krName = krName; }
 
     public static Category fromKr(String kr) {
+        if (kr == null) {
+            throw new IllegalArgumentException("Category is null");
+        }
         for (Category c : values()) if (c.krName.equals(kr)) return c;
         throw new IllegalArgumentException("Unknown category: " + kr);
     }
