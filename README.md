@@ -208,8 +208,8 @@ root
 | **통계 뷰어** | 카테고리별 최저가, 브랜드별 통합 최저가, 카테고리 Price-Stats 조회 UI |
 | Tailwind UI |  모바일 반응형, 버튼 유틸 `.btn-primary` 등 |
 
-
-
+![frontent1.png](frontent1.png)
+![frontend2.png](frontend2.png)
 ---
 
 

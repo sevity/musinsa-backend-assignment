@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import Providers from "@/components/Providers";   // ✅ 추가
 
-export const metadata = { title: "MUSINSA Price API UI" };
+export const metadata = { title: "MUSINSA Backend Assignment API UI" };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
