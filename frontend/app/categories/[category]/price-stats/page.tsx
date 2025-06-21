@@ -1,3 +1,4 @@
+// frontend/app/categories/price-stats/page.tsx
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
@@ -12,24 +13,32 @@ type Resp = {
 };
 
 export default function PriceStats() {
-  // ① 파라미터 디코드 → 안전 인코드
+  // ① URL 파라미터 디코드 → 안전 인코드
   const { category } = useParams<{ category: string }>();
   const decoded = decodeURIComponent(category || "");
   const safePath = encodeURIComponent(decoded);
 
-  // ② API 호출
-  const { data, isLoading, error } = useQuery<Resp>({
+  // ② API 호출 (항상 최신 데이터만 가져오도록 옵션 추가)
+  const { data, isLoading, error } = useQuery<Resp, Error>({
     queryKey: ["priceStats", decoded],
     queryFn: () =>
       api.get(`/categories/${safePath}/price-stats`).then((r) => r.data),
+    // 페이지 마운트·포커스·네트워크 복구 시마다 재요청
+    refetchOnMount: "always",
+    refetchOnWindowFocus: "always",
+    refetchOnReconnect: "always",
+    // 캐시 무효화
+    staleTime: 0,
+    retry: 1,
   });
 
   if (isLoading) return <p>Loading…</p>;
-
-  if (error) {
-    // 에러 파싱 로직 (생략)
-    return <p className="text-red-600">에러: {(error as any).message}</p>;
-  }
+  if (error)
+    return (
+      <p className="text-red-600">
+        에러: {(error as any).message}
+      </p>
+    );
 
   return (
     <div className="space-y-4">

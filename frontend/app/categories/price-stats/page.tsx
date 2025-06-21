@@ -13,7 +13,7 @@ export default function CategorySearch() {
     e.preventDefault();
     if (!cat) return;
     router.push(`/categories/${encodeURIComponent(cat)}/price-stats`);
-  }; 
+  };
 
   return (
     <section className="space-y-4">
@@ -49,7 +49,8 @@ export default function CategorySearch() {
       </form>
 
       <p className="text-gray-500">
-        드롭다운에서 카테고리를 선택하고 “조회” 버튼을 누르면 해당 카테고리의 최저가·최고가가 표시됩니다.
+        드롭다운에서 카테고리를 선택하고 “조회” 버튼을 누르면 해당 카테고리의
+        최저가·최고가가 표시됩니다.
       </p>
     </section>
   );
