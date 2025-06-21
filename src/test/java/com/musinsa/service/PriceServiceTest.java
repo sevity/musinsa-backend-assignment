@@ -13,7 +13,6 @@ import com.musinsa.dto.LowestByBrandResponse;
 import com.musinsa.dto.LowestByCategoryResponse;
 import com.musinsa.repository.BrandRepository;
 import com.musinsa.repository.ProductRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
