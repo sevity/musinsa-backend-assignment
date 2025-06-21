@@ -12,10 +12,12 @@ public enum ErrorCode {
     BRAND_ALREADY_EXISTS(HttpStatus.CONFLICT,  "BRAND_ALREADY_EXISTS", "이미 존재하는 브랜드입니다."),
     PRODUCT_NOT_FOUND(HttpStatus.NOT_FOUND,    "PRODUCT_NOT_FOUND",    "상품을 찾을 수 없습니다."),
     VALIDATION_ERROR(HttpStatus.BAD_REQUEST,   "VALIDATION_ERROR",     "요청 값이 유효하지 않습니다."),
+    PRODUCT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PRODUCT_ALREADY_EXISTS", "해당 브랜드·카테고리 조합의 상품이 이미 존재합니다."),
+
 
     // ───────── 5xx Server Error ─────────
-    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 오류가 발생했습니다."),
-    PRODUCT_ALREADY_EXISTS(HttpStatus.CONFLICT, "PRODUCT_ALREADY_EXISTS", "해당 브랜드·카테고리 조합의 상품이 이미 존재합니다.");
+    INTERNAL_ERROR(HttpStatus.INTERNAL_SERVER_ERROR, "INTERNAL_ERROR", "서버 오류가 발생했습니다.");
+
 
 
     private final HttpStatus status;

@@ -17,6 +17,12 @@ public class ProductService {
     private final BrandRepository brandRepo;
     private final ProductRepository productRepo;
 
+    /**
+     * 새로운 상품을 등록합니다.
+     * - 브랜드가 존재하는지 확인
+     * - 카테고리 문자열을 enum으로 변환, 유효성 검증
+     * - 동일 브랜드·카테고리의 상품 중복 검사 후 등록
+     */
     @Transactional
     public Product createProduct(String brandName, String categoryKr, int price) {
         Brand brand = brandRepo.findByName(brandName)
@@ -35,14 +41,21 @@ public class ProductService {
             );
         }
 
+        // 중복 검사: 이미 존재하는 브랜드·카테고리 조합인지 확인
         if (productRepo.existsByBrandAndCategory(brand, category)) {
-            throw new ApiException(ErrorCode.PRODUCT_ALREADY_EXISTS);
+            throw new ApiException(
+                    ErrorCode.PRODUCT_ALREADY_EXISTS,
+                    String.format("브랜드 '%s'의 카테고리 '%s' 상품이 이미 존재합니다.", brandName, categoryKr)
+            );
         }
 
         Product product = new Product(brand, category, price);
         return productRepo.save(product);
     }
 
+    /**
+     * 기존 상품의 가격을 수정합니다.
+     */
     @Transactional
     public Product updateProduct(Long id, int newPrice) {
         Product p = productRepo.findById(id)
@@ -55,6 +68,9 @@ public class ProductService {
         return p;
     }
 
+    /**
+     * 상품을 삭제합니다.
+     */
     @Transactional
     public void deleteProduct(Long id) {
         Product p = productRepo.findById(id)
