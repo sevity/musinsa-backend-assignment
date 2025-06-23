@@ -19,6 +19,14 @@ com.musinsa
 ```
 
 ---
+## 📋 Prerequisites
+
+- **Java**: 17 이상 (OpenJDK, Oracle JDK)
+- **Gradle Wrapper**: `chmod +x ./gradlew`
+- **Node.js**: 18.x LTS 권장
+- **pnpm** (또는 npm/yarn)
+
+---
 
 ## 🚀 빌드 & 실행
 
@@ -33,7 +41,8 @@ chmod +x gradlew
 
 # 3) run (in‑memory H2)
 ./gradlew bootRun
-http://localhost:8080/api/v1/categories/cheapest-brands
+http://localhost:8080/api/v1/categories/cheapest-brands # sample API call
+http://localhost:8080/swagger-ui.html # swagger UI
 
 # 4) frontend run
 cd frontend
