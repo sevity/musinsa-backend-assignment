@@ -37,6 +37,7 @@ http://localhost:8080/api/v1/categories/cheapest-brands
 
 # 4) frontend run
 cd frontend
+brew install node pnpm # 등으로 node, pnpm설치
 pnpm i  # or npm i / yarn
 pnpm dev
 http://localhost:3000/admin 
