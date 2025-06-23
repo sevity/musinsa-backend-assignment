@@ -33,6 +33,7 @@ chmod +x gradlew
 
 # 3) run (in‑memory H2)
 ./gradlew bootRun
+http://localhost:8080/api/v1/categories/cheapest-brands
 
 # 4) frontend run
 cd frontend
