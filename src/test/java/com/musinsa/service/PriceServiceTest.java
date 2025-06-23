@@ -42,7 +42,7 @@ class PriceServiceTest {
         for (Category c : Category.values()) {
             int price = c.ordinal() + 100;
             priceMap.put(c, price);
-            when(productRepo.findByCategory(c))
+            when(productRepo.findMinPriceByCategory(c))
                     .thenReturn(List.of(new Product(new Brand("B-"+c), c, price)));
         }
 
@@ -56,7 +56,7 @@ class PriceServiceTest {
     @Test
     void getLowestByCategory_whenEmpty_throwsException() {
         Category bad = Category.TOP;
-        when(productRepo.findByCategory(bad)).thenReturn(Collections.emptyList());
+        when(productRepo.findMinPriceByCategory(bad)).thenReturn(Collections.emptyList());
 
         ApiException ex = assertThrows(ApiException.class,
                 () -> priceService.getLowestByCategory());
@@ -126,7 +126,8 @@ class PriceServiceTest {
         Product p1 = new Product(b1, c, 500);
         Product p2 = new Product(b2, c, 1000);
         Product p3 = new Product(b3, c, 500);
-        when(productRepo.findByCategory(c)).thenReturn(List.of(p1, p2, p3));
+        when(productRepo.findMinPriceByCategory(c)).thenReturn(List.of(p1, p3));
+        when(productRepo.findMaxPriceByCategory(c)).thenReturn(List.of(p2));
 
         CategoryStatResponse resp = priceService.getCategoryStat(c.getKrName());
 
@@ -152,7 +153,7 @@ class PriceServiceTest {
     @Test
     void getCategoryStat_emptyList_throwsNotFound() {
         Category c = Category.HAT;
-        when(productRepo.findByCategory(c)).thenReturn(Collections.emptyList());
+        when(productRepo.findMinPriceByCategory(c)).thenReturn(Collections.emptyList());
 
         ApiException ex = assertThrows(ApiException.class,
                 () -> priceService.getCategoryStat(c.getKrName()));

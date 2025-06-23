@@ -30,8 +30,8 @@ public class PriceService {
         List<LowestByCategoryResponse.CategoryBrandPrice> list = new ArrayList<>();
 
         for (Category c : Category.values()) {
-            Product min = productRepo.findByCategory(c).stream()
-                    .min(Comparator.comparingInt(Product::getPrice))
+            Product min = productRepo.findMinPriceByCategory(c).stream()
+                    .findFirst()
                     .orElseThrow(() ->
                             new ApiException(
                                     ErrorCode.PRODUCT_NOT_FOUND,
@@ -127,33 +127,24 @@ public class PriceService {
             );
         }
 
-        List<Product> list = productRepo.findByCategory(c);
-        if (list.isEmpty()) {
+        List<Product> minProd = productRepo.findMinPriceByCategory(c);
+        if (minProd.isEmpty()) {
             throw new ApiException(
                     ErrorCode.CATEGORY_NOT_FOUND,
                     "요청하신 카테고리를 찾을 수 없습니다."
             );
         }
 
-        int minPrice = list.stream()
-                .mapToInt(Product::getPrice)
-                .min()
-                .getAsInt();
-        int maxPrice = list.stream()
-                .mapToInt(Product::getPrice)
-                .max()
-                .getAsInt();
+        List<Product> maxProd = productRepo.findMaxPriceByCategory(c);
 
-        List<CategoryStatResponse.BrandPrice> minList = list.stream()
-                .filter(p -> p.getPrice() == minPrice)
+        List<CategoryStatResponse.BrandPrice> minList = minProd.stream()
                 .map(p -> new CategoryStatResponse.BrandPrice(
                         p.getBrand().getName(),
                         p.getPrice()
                 ))
                 .toList();
 
-        List<CategoryStatResponse.BrandPrice> maxList = list.stream()
-                .filter(p -> p.getPrice() == maxPrice)
+        List<CategoryStatResponse.BrandPrice> maxList = maxProd.stream()
                 .map(p -> new CategoryStatResponse.BrandPrice(
                         p.getBrand().getName(),
                         p.getPrice()

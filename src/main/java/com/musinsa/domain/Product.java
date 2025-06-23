@@ -7,7 +7,10 @@ import lombok.*;
 
 @Getter @Setter @NoArgsConstructor
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"brand_id", "category"}))
+@Table(
+    uniqueConstraints = @UniqueConstraint(columnNames = {"brand_id", "category"}),
+    indexes = @Index(name = "idx_product_category", columnList = "category")
+)
 public class Product {
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;

@@ -66,4 +66,31 @@ class ProductRepositoryTest {
         assertThat(existsTop).isTrue();
         assertThat(notExistsHat).isFalse();
     }
+
+    @DisplayName("JPQL로 카테고리별 최저가/최고가 조회")
+    @Test
+    void jpqlMinMaxByCategory() {
+        Brand foo = new Brand("FOO");
+        Brand bar = new Brand("BAR");
+        em.persist(foo);
+        em.persist(bar);
+
+        Product low = new Product(foo, Category.HAT, 1000);
+        Product high = new Product(bar, Category.HAT, 2000);
+        em.persist(low);
+        em.persist(high);
+        em.flush();
+
+        List<Product> min = productRepo.findMinPriceByCategory(Category.HAT);
+        List<Product> max = productRepo.findMaxPriceByCategory(Category.HAT);
+
+        assertThat(min).hasSize(1)
+                .first()
+                .extracting(Product::getPrice)
+                .isEqualTo(1000);
+        assertThat(max).hasSize(1)
+                .first()
+                .extracting(Product::getPrice)
+                .isEqualTo(2000);
+    }
 }
