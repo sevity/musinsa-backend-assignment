@@ -28,6 +28,7 @@ git clone https://github.com/sevity/musinsa-backend-assignment
 cd musinsa-backend-assignment
 
 # 2) test (unit + slice + integration)
+chmod +x gradlew
 ./gradlew clean test
 
 # 3) run (in‑memory H2)
