@@ -40,7 +40,7 @@ cd frontend
 brew install node pnpm # 등으로 node, pnpm설치
 pnpm i  # or npm i / yarn
 pnpm dev
-http://localhost:3000/admin 
+http://localhost:3000/
 ```
 
 > H2 콘솔: `http://localhost:8080/h2-console`  
