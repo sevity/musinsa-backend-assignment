@@ -264,6 +264,5 @@ root
 1. **배치 데이터 초기화** : CSV 업로드 → 서비스 호출.
 2. **Query 최적화** : Price 통계에 카테고리‑별 인덱스 추가, JPQL 쿼리.
 3. **캐싱 & 모니터링** : Redis 캐싱 + Micrometer/Prometheus.
-5. **Frontend** : React + Tailwind 로 결과표 UI (Optional).
 
 
